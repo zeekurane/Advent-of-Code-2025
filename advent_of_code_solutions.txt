@@ -1,0 +1,415 @@
+Day 3:
+with open("input.txt", "r") as file:
+    answer = 0
+    for s in file:
+        s = s.rstrip("\n")
+        start = 0
+        width = 12
+        a = ""
+        while len(a)<12:
+            max_index = start
+            for i in range(start, len(s)-width+1):
+                if s[i]>s[max_index]:
+                    max_index=i
+            start=max_index+1
+            width-=1
+            a+=s[max_index]
+        answer+=int(a)
+    print(answer)
+
+Day 4:
+with open("input.txt", "r") as file:
+    matrix = []
+    answer = 0
+    cells = [[-1,-1], [0,-1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]]
+    def check(i, j):
+        count = 0
+        for cell in cells:
+            if 0<=i+cell[0]<m and 0<=j+cell[1]<n and matrix[i+cell[0]][j+cell[1]]=='@':
+                count+=1
+        return count<4
+                
+        
+    for s in file:
+        matrix.append([a for a in s.rstrip("\n")])
+        
+    m = len(matrix)
+    n = len(matrix[0])
+    removable = set()
+    def evaluate_it():
+        process_answer = 0
+        for i in range(m):
+            for j in range(n):
+                if matrix[i][j]=="@" and check(i, j):
+                    process_answer+=1
+                    removable.add((i, j))
+        return process_answer
+    
+    def do_it():
+        for i, j in removable:
+            matrix[i][j]="."
+        removable.clear()
+    
+    while True:
+        count = evaluate_it()
+        if count!=0:
+            answer+=count
+            do_it()
+        else:
+            break
+    
+    print(answer)
+
+Day 5:
+with open("input.txt", "r") as file:
+    arr = []
+    answer = 0
+    for s in file:
+        s = s.rstrip("\n")
+        if "-" in s:
+            arr.append([int(s[:s.index("-")]), int(s[s.index("-")+1:])])
+        """elif s!="":
+            num = int(s)
+            for a in arr:
+                if a[0]<=num<=a[1]:
+                    answer+=1
+                    break"""
+    arr.sort()
+    index=0
+    
+    while index<len(arr):
+        start = arr[index][0]
+        end = arr[index][1]
+        while index+1<len(arr) and arr[index+1][0]<=end:
+            index+=1
+            if end<=arr[index][1]:
+                end = arr[index][1]
+        answer+=end-start+1
+        index+=1
+            
+    print(answer)
+            
+Day 6:
+with open("input.txt", "r") as file:
+    arr = []
+    answer = 0
+    
+    for s in file:
+        s = s.rstrip("\n")
+        if s[0] not in ("*", "+"):
+            arr.append(s)
+            
+        else:
+            current_operator = "*"
+            index = 0
+            while index<len(s):
+                if s[index]=="*":
+                    current_operator = "*"
+                    problem_answer = 1
+                elif s[index]=="+":
+                    current_operator = "+"
+                    problem_answer = 0
+                problem_end = False
+                while not problem_end:
+                    problem_end = True
+                    num = ""
+                    for i in range(len(arr)):
+                        if index<len(arr[i]) and arr[i][index]!=" ":
+                            num+=arr[i][index]
+                            problem_end = False
+                        elif index<len(arr[i]) and not problem_end and arr[i][index]==" ":
+                            break
+                    if current_operator=="*" and not problem_end:
+                        problem_answer*=int(num)
+                    elif current_operator=="+" and not problem_end:
+                        problem_answer+=int(num)
+                    index+=1
+                answer+=problem_answer
+    print(answer)
+            
+Day 7:
+with open("input.txt", "r") as file:
+    tachyon_stream_past = {}
+    tachyon_stream_present = {}
+    splits = 0
+    for s in file:
+        s = s.rstrip("\n")
+        if "S" in s:
+            tachyon_stream_present[s.index("S")] = 1
+        elif "^" in s:
+            tachyon_stream_past = tachyon_stream_present
+            tachyon_stream_present = {}
+            for i in range(len(s)):
+                if s[i]=="^" and i in tachyon_stream_past:
+                    splits+=1
+                    if 0<=i-1<len(s):
+                        if i-1 in tachyon_stream_present:
+                            tachyon_stream_present[i-1]+=tachyon_stream_past[i]
+                        else:
+                            tachyon_stream_present[i-1]=tachyon_stream_past[i]
+                    if 0<=i+1<len(s):
+                        if i+1 in tachyon_stream_present:
+                            tachyon_stream_present[i+1]+=tachyon_stream_past[i]
+                        else:
+                            tachyon_stream_present[i+1]=tachyon_stream_past[i]
+                    del tachyon_stream_past[i]
+            for key in tachyon_stream_past.keys():
+                if key in tachyon_stream_present:
+                    tachyon_stream_present[key]+=tachyon_stream_past[key]
+                else:
+                    tachyon_stream_present[key]=tachyon_stream_past[key]
+            
+    print(sum(tachyon_stream_present.values()))
+
+Day 8:
+from math import sqrt
+with open("input.txt", "r") as file:
+    junction_box = []
+    for s in file:
+        s = s.rstrip("\n")
+        junction_box.append(list(map(int, s.split(","))))
+    distances = {}
+    for i in range(len(junction_box)):
+        arr=[]
+        for j in range(i+1, len(junction_box)):
+            arr.append([sqrt((junction_box[i][0]-junction_box[j][0])**2+(junction_box[i][1]-junction_box[j][1])**2+(junction_box[i][2]-junction_box[j][2])**2), j])
+        arr.sort()
+        if len(arr)!=0:
+            distances[i]=arr
+    
+    groups = []
+    connected=0
+    while connected!=len(junction_box) or len(groups)!=1:
+        first = True
+        for i in distances.keys():
+            if first:
+                minimum = distances[i][0][0]
+                minimum_index = i
+                first = False
+            else:
+                if distances[i][0][0]<minimum:
+                    minimum = distances[i][0][0]
+                    minimum_index = i
+        i = minimum_index
+        j = distances[minimum_index][0][1]
+        if len(distances[minimum_index])==1:
+            del distances[minimum_index]
+        else:
+            distances[minimum_index].pop(0)
+        
+        
+        i_group_index = None
+        j_group_index = None
+        for index in range(len(groups)):
+            if i in groups[index]:
+                i_group_index = index
+            if j in groups[index]:
+                j_group_index = index
+        
+        if i_group_index==None and j_group_index==None:
+            connected+=2
+            groups.append({i, j})
+        elif i_group_index!=None and j_group_index==None:
+            connected+=1
+            groups[i_group_index].add(j)
+        elif i_group_index==None and j_group_index!=None:
+            connected+=1
+            groups[j_group_index].add(i)
+        elif i_group_index!=j_group_index:
+            groups[i_group_index].update(groups[j_group_index])
+            groups.pop(j_group_index)
+    print(junction_box[i][0]*junction_box[j][0])
+    #groups.sort(key=len, reverse=True)
+    #print(len(groups[0])*len(groups[1])*len(groups[2]))
+
+Day 9:
+import sys
+from math import sqrt
+with open("input.txt", "r") as file:
+    corners = []
+    red_tiles = set()
+    
+    for s in file:
+        s = s.rstrip("\n")
+        corners.append(list(map(int, s.split(","))))
+        red_tiles.add((corners[-1][0], corners[-1][1]))
+    
+    green_tiles = set()
+    #directions = [[0, -1], [0, 1], [-1, 0], [1, 0]]
+    
+    for i in range(len(corners)-1, -1, -1):
+        if corners[i][0]==corners[i-1][0]:
+            x = corners[i][0]
+            for y in range(min(corners[i][1], corners[i-1][1])+1, max(corners[i][1], corners[i-1][1])):
+                green_tiles.add((x, y))
+        else:
+            y = corners[i][1]
+            for x in range(min(corners[i][0], corners[i-1][0])+1, max(corners[i][0], corners[i-1][0])):
+                green_tiles.add((x, y))
+    
+    """def fill(x, y):
+        green_tiles.add((x, y))
+        for direction in directions:
+            if (x+direction[0], y+direction[1]) not in green_tiles and (x+direction[0], y+direction[1]) not in red_tiles:
+                fill(x+direction[0], y+direction[1])
+    
+    # getting to know which part (inside or outside) to fill is tricky, so repeating values around corner point until answer arrives
+    # visualised on cartesian plain, found entry point for inside filling, but the spread being large recursion depth exausts
+    fill(corners[0][0]-1, corners[0][1]-1)"""
+
+    def do_it_plus(i):
+        x = corners[i][0]
+        
+        while (x, corners[i][1]) in green_tiles or (x, corners[i][1]) in red_tiles:
+            x+=1
+        while (x, corners[i][1]) not in green_tiles and (x, corners[i][1]) not in red_tiles:
+            x+=1
+        
+        if corners[i][1] in limit:
+            limit[corners[i][1]]=[min(corners[i][0], limit[corners[i][1]][0]), max(x, limit[corners[i][1]][1])]
+        else:
+            limit[corners[i][1]]=[corners[i][0], x]
+            
+    def do_it_minus(i):
+        x = corners[i][0]
+        
+        while (x, corners[i][1]) in green_tiles or (x, corners[i][1]) in red_tiles:
+            x-=1
+        while (x, corners[i][1]) not in green_tiles and (x, corners[i][1]) not in red_tiles:
+            x-=1
+        
+        if corners[i][1] in limit:
+            limit[corners[i][1]]=[min(x, limit[corners[i][1]][0]), max(corners[i][0], limit[corners[i][1]][1])]
+        else:
+            limit[corners[i][1]]=[x, corners[i][0]]
+
+    line = 49100
+    limit = {}
+    for i in range(len(corners)):
+        if corners[i][0]<line and corners[i][1] not in (98386, 1793):
+            do_it_plus(i)
+        elif corners[i][0]>line and corners[i][1] not in (98386, 1793) and corners[i] not in ([94710,50238], [94710,48527]):
+            do_it_minus(i)
+    limit[1793]=[49047, 50257]
+    limit[98386]=[48515, 49743]
+
+    max_area = 0
+    for i in range(len(corners)):
+        for j in range(i+1, len(corners)):
+            if ((corners[i][1]>=50238 and corners[j][1]>=50238) or (corners[i][1]<=48527 and corners[j][1]<=48527)) and (limit[corners[j][1]][0]<=corners[i][0]<=limit[corners[j][1]][1]) and (limit[corners[i][1]][0]<=corners[j][0]<=limit[corners[i][1]][1]) and max_area<(abs(corners[i][0]-corners[j][0]+1)*(abs(corners[i][1]-corners[j][1])+1)):
+                max_area=(abs(corners[i][0]-corners[j][0])+1)*(abs(corners[i][1]-corners[j][1])+1)
+                points = f"({corners[i][0], corners[i][1]} and {corners[j][0], corners[j][1]})"
+    print(points)
+    print(max_area)
+
+Day 10: #What a day!!
+import sys
+from math import sqrt
+from ortools.linear_solver import pywraplp
+from scipy.optimize import linprog
+with open("input.txt", "r") as file:
+    indicator_lights_answer = 0
+    joltage_answer = 0
+    for s in file:
+        s = s.rstrip("\n")
+        index_1 = s.index("]")
+        index_2 = s.index("{")
+        
+        machine_light = s[1:index_1]
+        buttons = {}
+        machine_joltage = [int(x) for x in s[index_2+1:len(s)-1].split(",")]
+        
+        indicator_lights_minimum_answer = 0
+        joltage_minimum_answer = sum(machine_joltage)
+        number_of_variables=len(s[index_1+2:index_2-1].split(" "))
+        A_eq = [[0 for _ in range(number_of_variables)] for _ in range(len(machine_joltage))]
+        for arrangement in s[index_1+2:index_2-1].split(" "):
+            button = tuple(int(x) for x in arrangement[1:len(arrangement)-1].split(","))
+            for num in button:
+                A_eq[num][indicator_lights_minimum_answer]=1
+                if num in buttons:
+                    buttons[num].append(button)
+                else:
+                    buttons[num]=[button]
+            indicator_lights_minimum_answer+=1
+        
+        def operate_lights(light, group):
+            for num in group:
+                if light[num]==".":
+                    light=light[:num]+"#"+light[num+1:]
+                else:
+                    light=light[:num]+"."+light[num+1:]
+            return light
+        
+        def recurse_lights(light, used_buttons):
+            diff_light_index = None
+            for i in range(len(machine_light)):
+                if machine_light[i]!=light[i]:
+                    diff_light_index=i
+                    break
+            if diff_light_index!=None:
+                for i in range(len(buttons[diff_light_index])):
+                    if buttons[diff_light_index][i] not in used_buttons:
+                        recurse_lights(operate_lights(light, buttons[diff_light_index][i]), used_buttons|{(buttons[diff_light_index][i])})
+            else:
+                global indicator_lights_minimum_answer
+                if len(used_buttons)<indicator_lights_minimum_answer:
+                    indicator_lights_minimum_answer=len(used_buttons)
+        
+        def recurse_joltage(joltage, press_count):
+            non_zero_minimum_index = None
+            for i in range(len(joltage)):
+                if joltage[i]>0 and (non_zero_minimum_index==None or joltage[non_zero_minimum_index]>joltage[i]):
+                    non_zero_minimum_index=i
+            if non_zero_minimum_index!=None:
+                for i in range(len(buttons[non_zero_minimum_index])):
+                        possible = True
+                        test_joltage = joltage[:]
+                        minimum_value = test_joltage[non_zero_minimum_index]
+                        for index in buttons[non_zero_minimum_index][i]:
+                            test_joltage[index]-=minimum_value
+                            if test_joltage[index]<0:
+                                possible = False
+                                break
+                        if possible:
+                            recurse_joltage(test_joltage, press_count+minimum_value)
+            else:
+                global joltage_minimum_answer
+                if press_count<joltage_minimum_answer:
+                    joltage_minimum_answer=press_count
+            
+        def linear_programming(A_eq, b_eq):
+            minimize_func_coefficients = [1]*number_of_variables
+            bounds = [(0, None) for _ in range(number_of_variables)]
+            
+            res = linprog(minimize_func_coefficients, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method='highs')
+            print(res)
+        
+        def solve_milp(number_of_variables, A_eq, b_eq):
+            solver = pywraplp.Solver.CreateSolver('CBC')
+            arr = [None for _ in range(number_of_variables)]
+            
+            for i in range(number_of_variables):
+                arr[i] = solver.IntVar(0, solver.infinity(), str(i))
+            
+            for i in range(len(A_eq)):
+                solver.Add(sum(arr[j]*A_eq[i][j] for j in range(len(arr)))==b_eq[i])
+            
+            solver.Minimize(sum(arr[i] for i in range(len(arr))))
+            
+            status = solver.Solve()
+            return solver.Objective().Value()
+            
+            
+        
+        recurse_lights("."*len(machine_light), set())
+        indicator_lights_answer+=indicator_lights_minimum_answer
+        
+        #recurse_joltage(machine_joltage, 0)
+        #linear_programming(A_eq, machine_joltage)
+        joltage_minimum_answer=solve_milp(number_of_variables, A_eq, machine_joltage)
+        joltage_answer+=joltage_minimum_answer
+    
+    print(indicator_lights_answer)
+    print(joltage_answer)
+        
